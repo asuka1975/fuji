@@ -1,0 +1,7 @@
+#ifndef INCLUDE_FUJI_CORE_CORE_HPP
+#define INCLUDE_FUJI_CORE_CORE_HPP
+
+
+
+
+#endif

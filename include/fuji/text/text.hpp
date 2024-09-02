@@ -1,0 +1,7 @@
+#ifndef INCLUDE_FUJI_TEXT_TEXT_HPP
+#define INCLUDE_FUJI_TEXT_TEXT_HPP
+
+
+
+
+#endif
