@@ -5,6 +5,8 @@ The repository contains the Fuji C++ library code.
 ## Index
 
 - [About Fuji](#about)
+- [Quickstart](#quickstart)
+- [License](#license)
 
 <a name="about"></a>
 ## About Fuji
