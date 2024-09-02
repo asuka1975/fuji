@@ -1,0 +1,1 @@
+#include <fuji/core/instance.hpp>
