@@ -22,3 +22,4 @@ target_include_directories(fuji PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_directories(fuji PRIVATE Vulkan::Vulkan)
 
 add_subdirectory(test)
+add_subdirectory(examples)
