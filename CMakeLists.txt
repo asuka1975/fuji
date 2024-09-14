@@ -13,7 +13,8 @@ include(CTest)
 find_package(Vulkan REQUIRED)
 
 set(CORE_SOURCES src/core/core.cpp
-                 src/core/instance.cpp)
+                 src/core/instance.cpp
+                 src/core/internal/utility/shader_module.cpp)
 set(TEXT_SOURCES src/text/text.cpp)
 
 add_library(fuji src/fuji.cpp ${CORE_SOURCES} ${TEXT_SOURCES})
