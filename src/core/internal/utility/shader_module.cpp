@@ -8,7 +8,7 @@ fuji::core::utility::ShaderModule::ShaderModule(const vk::Device& device, const 
     std::memcpy(data.data(), code.data(), code.size());
     vk::ShaderModuleCreateInfo createInfo {
         {},
-        data.size(),
+        data.size() * sizeof(std::uint32_t),
         data.data()
     };
     this->shaderModule = device.createShaderModuleUnique(createInfo);

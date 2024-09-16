@@ -28,10 +28,13 @@ endfunction()
 add_unittest(fuji_test)
 add_unittest(core/internal/utility/shader_module_test)
 add_unittest(core/internal/utility/vertex_shader_input_layout_test)
+add_unittest(core/internal/utility/shader_stage_flow_test)
 
 set(UNITTEST_TARGETS 
     fuji_test 
     core_internal_utility_shader_module_test 
-    core_internal_utility_vertex_shader_input_layout_test)
+    core_internal_utility_vertex_shader_input_layout_test
+    core_internal_utility_shader_stage_flow_test)
 
 add_shader_resource(test vert "${UNITTEST_TARGETS}")
+add_shader_resource(test frag "${UNITTEST_TARGETS}")

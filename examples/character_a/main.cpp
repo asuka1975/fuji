@@ -1,3 +1,5 @@
+#include "fuji/core/internal/utility/shader_module.hpp"
+#include "fuji/core/internal/utility/vertex_shader_input_layout.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -15,6 +17,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan_engine.hpp>
 
+#include <fuji/core/internal/utility/shader_stage_flow.hpp>
 
 std::uint32_t findMemoryType(std::uint32_t typeFilter, vk::PhysicalDeviceMemoryProperties memoryProperties, vk::MemoryPropertyFlags properties) {
     for(std::uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
@@ -271,29 +274,6 @@ int main() {
 
         Texture texture { engine, imageData, 16, 16 };
 
-        std::ifstream vert_fin { TEXTURE_VERT_SPV_FILE, std::ios::in | std::ios::binary };
-        std::vector<char> vert_code { std::istreambuf_iterator<char>{ vert_fin }, std::istreambuf_iterator<char> {} };
-        std::ifstream frag_fin { TEXTURE_FRAG_SPV_FILE, std::ios::in | std::ios::binary };
-        std::vector<char> frag_code { std::istreambuf_iterator<char>{ frag_fin }, std::istreambuf_iterator<char> {} };
-
-        auto vertShaderModule = engine.createShaderModule(vert_code);
-        auto fragShaderModule = engine.createShaderModule(frag_code);
-
-        vk::PipelineShaderStageCreateInfo vertShaderStageInfo {};
-        vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-        vertShaderStageInfo.module = vertShaderModule.get();
-        vertShaderStageInfo.pName = "main";
-
-        vk::PipelineShaderStageCreateInfo fragShaderStageInfo {};
-        fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-        fragShaderStageInfo.module = fragShaderModule.get();
-        fragShaderStageInfo.pName = "main";
-
-        vk::PipelineShaderStageCreateInfo shaderStages[] = {
-            vertShaderStageInfo,
-            fragShaderStageInfo
-        };
-
         std::vector<Vertex> vertices = {
             { glm::vec2(-0.5, 0.5), glm::vec2(0, 1) },
             { glm::vec2(-0.5, -0.5), glm::vec2(0, 0) },
@@ -368,34 +348,25 @@ int main() {
         descriptorWrites[0].descriptorCount = 1;
         descriptorWrites[0].pImageInfo = &imageInfo;
         engine.getDevice()->updateDescriptorSets(descriptorWrites, {});
-        
-        vk::VertexInputBindingDescription positionBinding {};
-        positionBinding.binding = 0;
-        positionBinding.stride = sizeof(Vertex);
-        positionBinding.inputRate = vk::VertexInputRate::eVertex;
 
-        vk::VertexInputAttributeDescription positionAttribute {};
-        positionAttribute.binding = 0;
-        positionAttribute.location = 0;
-        positionAttribute.format = vk::Format::eR32G32Sfloat;
-        positionAttribute.offset = offsetof(Vertex, pos);
+        std::ifstream vert_fin { TEXTURE_VERT_SPV_FILE, std::ios::in | std::ios::binary };
+        std::vector<char> vert_code { std::istreambuf_iterator<char>{ vert_fin }, std::istreambuf_iterator<char> {} };
+        std::ifstream frag_fin { TEXTURE_FRAG_SPV_FILE, std::ios::in | std::ios::binary };
+        std::vector<char> frag_code { std::istreambuf_iterator<char>{ frag_fin }, std::istreambuf_iterator<char> {} };
 
-        vk::VertexInputAttributeDescription textureCoordAttribute {};
-        textureCoordAttribute.binding = 0;
-        textureCoordAttribute.location = 1;
-        textureCoordAttribute.format = vk::Format::eR32G32Sfloat;
-        textureCoordAttribute.offset = offsetof(Vertex, texCoord);
+        std::vector<fuji::core::utility::ShaderModule> shaderModules;
+        shaderModules.emplace_back(engine.getDevice().get(), vert_code, vk::ShaderStageFlagBits::eVertex);
+        shaderModules.emplace_back(engine.getDevice().get(), frag_code, vk::ShaderStageFlagBits::eFragment);
 
-        std::vector<vk::VertexInputAttributeDescription> attributes = {
-            positionAttribute, textureCoordAttribute
+        fuji::core::utility::ShaderStageFlow shaderStageFlow {
+            std::move(shaderModules),
+            fuji::core::utility::VertexShaderInputLayout {
+                {
+                    fuji::core::utility::Binding { vk::VertexInputRate::eVertex, &Vertex::pos, &Vertex::texCoord }
+                }
+            }
         };
-
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo {};
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.pVertexBindingDescriptions = &positionBinding;
-        vertexInputInfo.vertexAttributeDescriptionCount = attributes.size();
-        vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
-
+        
         vk::PipelineInputAssemblyStateCreateInfo inputAssembly {};
         inputAssembly.topology = vk::PrimitiveTopology::eTriangleStrip;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
@@ -417,8 +388,8 @@ int main() {
             vk::DynamicState::eScissor
         };
         vk::PipelineDynamicStateCreateInfo dynamicState {};
-        dynamicState.dynamicStateCount = dynamicStates.size();
-        dynamicState.pDynamicStates = dynamicStates.data();
+        // dynamicState.dynamicStateCount = dynamicStates.size();
+        // dynamicState.pDynamicStates = dynamicStates.data();
 
         vk::PipelineViewportStateCreateInfo viewportState {};
         viewportState.viewportCount = 1;
@@ -514,9 +485,9 @@ int main() {
 
         vk::UniqueRenderPass renderPass = engine.getDevice()->createRenderPassUnique(renderPassInfo);
         vk::GraphicsPipelineCreateInfo graphicsPipelineInfo {};
-        graphicsPipelineInfo.stageCount = 2;
-        graphicsPipelineInfo.pStages = shaderStages;
-        graphicsPipelineInfo.pVertexInputState = &vertexInputInfo;
+        graphicsPipelineInfo.stageCount = shaderStageFlow.getShaderStageCreateInfos().size();
+        graphicsPipelineInfo.pStages = shaderStageFlow.getShaderStageCreateInfos().data();
+        graphicsPipelineInfo.pVertexInputState = &shaderStageFlow.getVertexInputStateCreateInfo();
         graphicsPipelineInfo.pInputAssemblyState = &inputAssembly;
         graphicsPipelineInfo.pViewportState = &viewportState;
         graphicsPipelineInfo.pRasterizationState = &rasterizer;
@@ -577,19 +548,19 @@ int main() {
             commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
                 commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline);
 
-                vk::Viewport viewport {
-                    0.0f, 0.0f,
-                    static_cast<float>(extent.width),
-                    static_cast<float>(extent.height),
-                    0.0f, 1.0f
-                };
-                commandBuffer.setViewport(0, { viewport });
+                // vk::Viewport viewport {
+                //     0.0f, 0.0f,
+                //     static_cast<float>(extent.width),
+                //     static_cast<float>(extent.height),
+                //     0.0f, 1.0f
+                // };
+                // commandBuffer.setViewport(0, { viewport });
 
-                vk::Rect2D scissor {
-                    vk::Offset2D { 0, 0 },
-                    extent
-                };
-                commandBuffer.setScissor(0, { scissor });
+                // vk::Rect2D scissor {
+                //     vk::Offset2D { 0, 0 },
+                //     extent
+                // };
+                // commandBuffer.setScissor(0, { scissor });
 
                 commandBuffer.bindVertexBuffers(0, { positionBuffer }, { 0 });
 

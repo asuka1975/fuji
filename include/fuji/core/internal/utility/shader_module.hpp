@@ -7,6 +7,7 @@ namespace fuji::core::utility {
     class ShaderModule {
     public:
         ShaderModule(const vk::Device& device, const std::vector<char>& code, vk::ShaderStageFlagBits shaderStage);
+        ShaderModule(ShaderModule&&) = default;
         ~ShaderModule() = default;
         const vk::ShaderModule& getHandle() const;
         vk::ShaderStageFlagBits getShaderStage() const;

@@ -24,12 +24,14 @@ namespace fuji::core::utility {
     class Binding {
     public:
         template <class T, class... U>
-        Binding(U T::*... members) : attributeDescriptions({ AttributeDescription::createDescription(members)... }), stride(sizeof(T)) {}
+        Binding(vk::VertexInputRate inputRate, U T::*... members) : inputRate(inputRate), attributeDescriptions({ AttributeDescription::createDescription(members)... }), stride(sizeof(T)) {}
+        vk::VertexInputRate getInputRate() const noexcept;
         const std::vector<AttributeDescription>& getAttributeDescriptions() const noexcept;
-        std::size_t getStride() const noexcept;
+        std::uint32_t getStride() const noexcept;
     private:
+        vk::VertexInputRate inputRate;
         std::vector<AttributeDescription> attributeDescriptions;
-        std::size_t stride;
+        std::uint32_t stride;
     };
 
     class VertexShaderInputLayout {

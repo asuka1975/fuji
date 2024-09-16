@@ -15,7 +15,9 @@ find_package(Vulkan REQUIRED)
 set(CORE_SOURCES src/core/core.cpp
                  src/core/instance.cpp
                  src/core/internal/utility/shader_module.cpp
-                 src/core/internal/utility/vertex_shader_input_layout.cpp)
+                 src/core/internal/utility/vertex_shader_input_layout.cpp
+                 src/core/internal/utility/graphics_pipeline_create_info_template.cpp
+                 src/core/internal/utility/shader_stage_flow.cpp)
 set(TEXT_SOURCES src/text/text.cpp)
 
 add_library(fuji src/fuji.cpp ${CORE_SOURCES} ${TEXT_SOURCES})
